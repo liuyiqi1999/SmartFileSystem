@@ -2,7 +2,6 @@ package Manager;
 
 import Block.*;
 import Id.*;
-import Utils.MD5;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,5 +42,10 @@ public class DefaultBlockManagerImpl implements BlockManager{
     @Override
     public Id<BlockManager> getId() {
         return this.id;
+    }
+
+    @Override
+    public int getSize(){
+        return idBlockMap.size();
     }
 }

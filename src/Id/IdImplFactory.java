@@ -2,6 +2,7 @@ package Id;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class IdImplFactory{
     private static IdImplFactory idImplFactory = null;
@@ -38,6 +39,10 @@ public class IdImplFactory{
             return idImplCreator.getNewId();
         }
     }
+
+    public static <T> Id<T> getIdWithIndex(Class<T> clazz, int id) {
+        return new IdImpl<T>(id, clazz);
+    }
 }
 
 class IdImpl<T> implements Id<T> {
@@ -60,6 +65,7 @@ class IdImpl<T> implements Id<T> {
             case "Block":
                 return "b" + this.id;
             case "File":
+            case "FileMeta":
                 return "f" + this.id;
             case "BlockManager":
                 return "bm" + this.id;
@@ -68,5 +74,19 @@ class IdImpl<T> implements Id<T> {
             default:
                 return "";//TODO
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        IdImpl<?> id1 = (IdImpl<?>) o;
+        return id == id1.id &&
+                Objects.equals(clazz, id1.clazz);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clazz, id);
     }
 }

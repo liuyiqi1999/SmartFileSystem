@@ -18,6 +18,7 @@ public class DefaultBlockDataImpl implements BlockData {
 
     @Override
     public byte[] getData() {
-        return data;
+        File file = new File(path+".data");
+        return Utils.IOUtils.readByteArrayFromFile(file, file.length());
     }
 }

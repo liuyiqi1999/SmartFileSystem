@@ -32,7 +32,11 @@ public class DefaultBlockImpl implements Block {
 
     @Override
     public byte[] read() {
-        return blockData.getData();
+        byte[] data = blockData.getData();
+        String oldMD5 = blockMeta.getCheckSum();
+        String newMD5 = Utils.MD5.getByteArrayMD5(data);
+        if (newMD5.equals(oldMD5)) return data;
+        else return null; //TODO: Block 校验错误
     }
 
     @Override

@@ -10,4 +10,6 @@ public interface BlockManager {
     default Block newEmptyBlock(int blockSize) {
         return newBlock(new byte[blockSize]);
     }
+
+    int getSize();
 }
