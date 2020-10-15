@@ -67,6 +67,7 @@ public class DefaultFileManagerControllerImpl implements FileManagerController{
             if (fmFile.exists()) {
                 String[] fileNames = fmFile.list();
                 for (int j = 0; j < fileNames.length; j++) {
+                    if(!fileNames[j].substring(fileNames[j].lastIndexOf(".")).equals("file")) continue;
                     Id<File> fId = IdImplFactory.getIdWithIndex(File.class, IOUtils.getIntInFileName(fileNames[j]));
                     File file = new DefaultFileImpl(fileManager, fId);
                     fileManager.registerFile(file);
