@@ -3,6 +3,7 @@ package Block;
 import Utils.IOUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 public class DefaultBlockMetaImpl implements BlockMeta{
     int size;
@@ -13,9 +14,16 @@ public class DefaultBlockMetaImpl implements BlockMeta{
         this.size = size;
         this.checksum = checksum;
         this.path = path;
-        String data = "size: "+size+"\nchecksum: "+checksum;
-        File file = new File(path+".meta");
-        IOUtils.writeByteArrayToFile(data.getBytes(),file);
+        String data = size+"\n"+checksum;
+        File file = new File(path);
+        if(!file.exists()){// 若不存在则为新建，若存在则只是恢复到内存
+            try {
+                file.createNewFile();
+                IOUtils.writeByteArrayToFile(data.getBytes(),file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override

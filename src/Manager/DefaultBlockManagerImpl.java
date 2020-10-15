@@ -2,7 +2,9 @@ package Manager;
 
 import Block.*;
 import Id.*;
+import Utils.Properties;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +16,7 @@ public class DefaultBlockManagerImpl implements BlockManager{
         IdImplFactory idImplFactory = IdImplFactory.getInstance();
         this.id = idImplFactory.getNewId(BlockManager.class);
         this.idBlockMap = new HashMap<>();
+
     }
 
     @Override
@@ -23,6 +26,10 @@ public class DefaultBlockManagerImpl implements BlockManager{
 
     @Override
     public Block newBlock(byte[] b) {
+        File root = new File(Properties.BLOCK_PATH+"/"+this.id.toString());
+        if(!root.exists()){
+            root.mkdir();
+        }
         Block block = new DefaultBlockImpl(this, b);
         Id<Block> bid = block.getIndexId();
         if(idBlockMap.get(bid)==null){

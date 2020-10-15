@@ -33,6 +33,13 @@ public class DefaultFileManagerImpl implements FileManager{
             root.mkdir();
         }
         File file = new DefaultFileImpl(this, fileId);
+        registerFile(file);
+        return file;
+    }
+
+    @Override
+    public File registerFile(File file){
+        Id<File> fileId = file.getFileId();
         if(idFileMap.get(fileId)==null){
             idFileMap.put(fileId, file);
         } else {

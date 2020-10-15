@@ -5,6 +5,7 @@ import Controller.BlockManagerController;
 import Controller.DefaultBlockManagerControllerImpl;
 import Id.*;
 import Manager.*;
+import Utils.IOUtils;
 import Utils.Properties;
 
 public class DefaultFileImpl implements File {
@@ -17,10 +18,18 @@ public class DefaultFileImpl implements File {
     final static int MOVE_HEAD = 1;
     final static int MOVE_TAIL = 2;
 
+    public DefaultFileImpl(Id<File> id, FileManager fileManager, FileMeta fileMeta) {
+        this.id = id;
+        this.fileManager = fileManager;
+        this.fileMeta = fileMeta;
+        this.curr = 0;
+    }
+
     public DefaultFileImpl(FileManager fileManager, Id<File> id) {
         this.id = id;
         this.fileManager = fileManager;
         this.fileMeta = new DefaultFileMetaImpl(this.fileManager, this.id);
+        this.curr = 0;
     }
 
     @Override
@@ -91,13 +100,16 @@ public class DefaultFileImpl implements File {
     public void close() {
     }
 
-    public File recoverFile(java.io.File file){
-        int indexId = Integer.getInteger(String.valueOf(file.getName().charAt(1)));
+    public static File recoverFile(java.io.File file, FileManager fileManager){
+        int indexId = IOUtils.getIntInFileName(file.getName());
         Id<File> id = IdImplFactory.getIdWithIndex(File.class, indexId);
 
         byte[] data = Utils.IOUtils.readByteArrayFromFile(file, file.length());
         String[] lines = data.toString().split("\n");
         long fileSize = Long.parseLong(lines[0]);
 
+        FileMeta fileMeta = DefaultFileMetaImpl.recoverFileMeta(lines, id, fileSize, fileManager);
+
+        return new DefaultFileImpl(id, fileManager, fileMeta);
     }
 }

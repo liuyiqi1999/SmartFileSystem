@@ -1,9 +1,12 @@
 package File;
 
-import Block.Block;
+import Block.*;
+import Controller.BlockManagerController;
+import Controller.DefaultBlockManagerControllerImpl;
 import Id.*;
 import Manager.BlockManager;
 import Manager.FileManager;
+import Utils.IOUtils;
 import Utils.Properties;
 
 import java.io.IOException;
@@ -20,9 +23,15 @@ public class DefaultFileMetaImpl implements FileMeta {
         return fileSize;
     }
 
+    DefaultFileMetaImpl(Id<FileMeta> id, long fileSize, List<List<Block>> blocksList, FileManager fileManager) {
+        this.id = id;
+        this.fileSize = fileSize;
+        this.blocksList = blocksList;
+        this.fileManager = fileManager;
+    }
+
     DefaultFileMetaImpl(FileManager fileManager, Id<File> fileId) {
-        IdImplFactory idImplFactory = IdImplFactory.getInstance();
-        this.id = idImplFactory.getNewId(FileMeta.class);
+        this.id = IdImplFactory.getIdWithIndex(FileMeta.class, fileId.getId());
         this.fileSize = 0;
         this.fileManager = fileManager;
         blocksList = new ArrayList<>();
@@ -80,10 +89,23 @@ public class DefaultFileMetaImpl implements FileMeta {
         return data.substring(0, length).getBytes();
     }
 
-    public FileMeta recoverFileMeta(String[] lines){
-        for(int i=2;i<lines.length;i++){
-            String[] blocks = lines[i].split(";");
-
+    public static FileMeta recoverFileMeta(String[] lines, Id<File> fileId, long fileSize, FileManager fileManager) {
+        List<List<Block>> blocksList = new ArrayList<>();
+        for (int i = 2; i < lines.length; i++) {
+            String[] blockNames = lines[i].split(";");
+            BlockManagerController blockManagerController = DefaultBlockManagerControllerImpl.getInstance();
+            List<Block> blocks = new ArrayList<Block>();
+            for (int j = 0; j < blockNames.length; j++) {
+                Id<BlockManager> bmId = IdImplFactory.getIdWithIndex(BlockManager.class, IOUtils.getIntInFileName(blockNames[j].split("-")[0]));
+                BlockManager blockManager = blockManagerController.getBlockManager(bmId);
+                Id<Block> bId = IdImplFactory.getIdWithIndex(Block.class, IOUtils.getIntInFileName(blockNames[j].split("-")[1]));
+                java.io.File metaFile = new java.io.File(Properties.BLOCK_PATH + "/" + bmId.toString() + "/" + bId.toString() + ".meta");
+                java.io.File dataFile = new java.io.File(Properties.BLOCK_PATH + "/" + bmId.toString() + "/" + bId.toString() + ".data");
+                Block block = DefaultBlockImpl.recoverBlock(blockManager, metaFile, dataFile);
+                blocks.add(block);
+            }
+            blocksList.add(blocks);
         }
+        return new DefaultFileMetaImpl(IdImplFactory.getIdWithIndex(FileMeta.class, fileId.getId()), fileSize, blocksList, fileManager);
     }
 }

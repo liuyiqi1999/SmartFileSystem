@@ -7,6 +7,8 @@ import Manager.FileManager;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import Utils.IOUtils;
 import Utils.Properties;
 
 public class DefaultFileManagerControllerImpl implements FileManagerController{
@@ -26,6 +28,7 @@ public class DefaultFileManagerControllerImpl implements FileManagerController{
             }
             defaultFileManagerController = new DefaultFileManagerControllerImpl(map);
         }
+        defaultFileManagerController.recoverHierarchy();
         return defaultFileManagerController;
     }
 
@@ -57,19 +60,18 @@ public class DefaultFileManagerControllerImpl implements FileManagerController{
     }
 
     private void recoverHierarchy(){
-        java.io.File root = new java.io.File(Properties.FILE_PATH);
-        for(int i=0;i<Properties.FILE_MANAGER_COUNT;i++){
-            java.io.File fmFile = new java.io.File(Properties.FILE_PATH+"/fm"+i);
-            if(fmFile.exists()){
+        for(int i=0;i<Properties.FILE_MANAGER_COUNT;i++) {
+            Id<FileManager> fmId = IdImplFactory.getIdWithIndex(FileManager.class, i);
+            FileManager fileManager = getFileManager(fmId);
+            java.io.File fmFile = new java.io.File(Properties.FILE_PATH + "/fm" + i);
+            if (fmFile.exists()) {
                 String[] fileNames = fmFile.list();
-                Id<FileManager> fmId = IdImplFactory.getIdWithIndex(FileManager.class, i);
-                for(int j=0;j<fileNames.length;j++){
-                    Id<File> fId = IdImplFactory.getIdWithIndex(File.class, Integer.getInteger(String.valueOf(fileNames[j].charAt(1))));
-                    File file = new DefaultFileImpl(getFileManager(fmId),fId);
-
+                for (int j = 0; j < fileNames.length; j++) {
+                    Id<File> fId = IdImplFactory.getIdWithIndex(File.class, IOUtils.getIntInFileName(fileNames[j]));
+                    File file = new DefaultFileImpl(fileManager, fId);
+                    fileManager.registerFile(file);
                 }
             }
         }
-
     }
 }
