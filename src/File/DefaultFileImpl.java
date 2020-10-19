@@ -87,7 +87,7 @@ public class DefaultFileImpl implements File {
 
     @Override
     public long move(long offset, int where) {
-        if (where != MOVE_CURR || where != MOVE_HEAD || (where != MOVE_TAIL && offset > 0)) return 0;// TODO: 参数错误报错
+        if (where != MOVE_CURR && where != MOVE_HEAD && (where != MOVE_TAIL && offset > 0)) return 0;// TODO: 参数错误报错
         switch (where) {
             case MOVE_CURR:
                 curr += offset;

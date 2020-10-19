@@ -18,6 +18,8 @@ public class Application {
         //file.write("file123".getBytes());
         //file.setSize(15);
         System.out.println(new String(file.read(7)));
+        file.move(2,1);
+        System.out.println(new String(file.read(5)));
         //file.move(4,1);
     }
 }

@@ -83,9 +83,7 @@ public class DefaultFileMetaImpl implements FileMeta {
     }
 
     public byte[] readFile(int length, long curr) {
-        long startBlock = curr / Properties.BLOCK_SIZE;
-        long startBlockIndex = 0;
-        if (startBlock != 0) startBlockIndex = startBlock - 1;
+        long startBlockIndex = curr / Properties.BLOCK_SIZE;
         int readLength = 0;
         StringBuilder data = new StringBuilder();
         for (int i = (int) startBlockIndex; i < blocksList.size(); i++) {
