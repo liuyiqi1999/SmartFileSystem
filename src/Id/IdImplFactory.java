@@ -28,6 +28,10 @@ public class IdImplFactory{
         public Id<T> getNewId(){
             return new IdImpl<>(localId++,clazz);
         }
+
+        public void recoverLocalId(int i) {
+            if(i>localId) localId = i;
+        }
     }
 
     public <T> Id<T> getNewId(Class<T> clazz){
@@ -42,6 +46,16 @@ public class IdImplFactory{
 
     public static <T> Id<T> getIdWithIndex(Class<T> clazz, int id) {
         return new IdImpl<T>(id, clazz);
+    }
+
+    public <T> void recoverLocalId(Class<T> clazz, int localId){
+        if (this.classIdImplFactoryMap.get(clazz)!=null) {
+            this.classIdImplFactoryMap.get(clazz).recoverLocalId(localId);
+        }else{
+            IdImplCreator<T> idImplCreator = new IdImplCreator<>(clazz);
+            this.classIdImplFactoryMap.put(clazz,idImplCreator);
+            idImplCreator.recoverLocalId(localId);
+        }
     }
 }
 

@@ -20,12 +20,16 @@ public class DefaultBlockImpl implements Block {
         this.id = idImplFactory.getNewId(Block.class);
         this.blockManager = blockManager;
         String md5 = MD5.getByteArrayMD5(data);
-        String path = Properties.BLOCK_PATH + blockManager.getId().toString() + "/" + this.getIndexId().toString();
+        String path = Properties.BLOCK_PATH +"/"+ blockManager.getId().toString() + "/" + this.getIndexId().toString();
         this.blockMeta = new DefaultBlockMetaImpl(data.length, md5, path+".meta");
         this.blockData = new DefaultBlockDataImpl(data, path+".data");
     }
 
-    public DefaultBlockImpl(BlockManager blockManager, BlockMeta blockMeta, BlockData blockData) {
+    public DefaultBlockImpl(BlockManager blockManager, BlockMeta blockMeta, BlockData blockData, Id<Block> id) {// 恢复用构造方法
+        this.id = id;
+        int indexId = id.getId();
+        IdImplFactory idImplFactory = IdImplFactory.getInstance();
+        idImplFactory.recoverLocalId(Block.class, indexId);// 防止因为ID工厂localID未更新导致的block覆盖的问题
         this.blockManager = blockManager;
         this.blockMeta = blockMeta;
         this.blockData = blockData;
@@ -56,14 +60,17 @@ public class DefaultBlockImpl implements Block {
     }
 
     public static Block recoverBlock(BlockManager blockManager, File meta, File data){
+        Id<Block> id = IdImplFactory.getIdWithIndex(Block.class,IOUtils.getIntInFileName(meta.getName()));
         byte[] metaData = IOUtils.readByteArrayFromFile(meta, meta.length());
-        int size = Integer.getInteger(metaData.toString().split("\n")[0]);
-        String checksum = metaData.toString().split("\n")[1];
+        if(metaData==null) return null;//TODO: 文件为空时报错！
+        String[] metaLines = (new String(metaData)).split("\n");
+        int size = Integer.parseInt(metaLines[0]);
+        String checksum = metaLines[1];
         BlockMeta blockMeta = new DefaultBlockMetaImpl(size, checksum, meta.getPath());
-
         byte[] dataData = IOUtils.readByteArrayFromFile(data, data.length());
         BlockData blockData = new DefaultBlockDataImpl(dataData, data.getPath());
-
-        return new DefaultBlockImpl(blockManager, blockMeta, blockData);
+        Block block = new DefaultBlockImpl(blockManager, blockMeta, blockData, id);
+        blockManager.registerBlock(block);
+        return block;
     }
 }

@@ -65,11 +65,12 @@ public class DefaultFileManagerControllerImpl implements FileManagerController{
             FileManager fileManager = getFileManager(fmId);
             java.io.File fmFile = new java.io.File(Properties.FILE_PATH + "/fm" + i);
             if (fmFile.exists()) {
-                String[] fileNames = fmFile.list();
-                for (int j = 0; j < fileNames.length; j++) {
-                    if(!fileNames[j].substring(fileNames[j].lastIndexOf(".")).equals("file")) continue;
-                    Id<File> fId = IdImplFactory.getIdWithIndex(File.class, IOUtils.getIntInFileName(fileNames[j]));
-                    File file = new DefaultFileImpl(fileManager, fId);
+                java.io.File[] files = fmFile.listFiles();
+                for (int j = 0; j < files.length; j++) {
+                    if(!(files[j].getName().substring(files[j].getName().lastIndexOf("."))).equals(".file")) continue; //排除不相关文件
+//                    Id<File> fId = IdImplFactory.getIdWithIndex(File.class, IOUtils.getIntInFileName(fileNames[j]));
+//                    File file = new DefaultFileImpl(fileManager, fId);
+                    File file = DefaultFileImpl.recoverFile(files[j], fileManager);
                     fileManager.registerFile(file);
                 }
             }

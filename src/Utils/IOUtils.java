@@ -2,10 +2,9 @@ package Utils;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Optional;
 
 public class IOUtils {
-    static int BUFFER_SIZE = 8192 * 2;
-
     public static void writeByteArrayToFile(byte[] data, File dest) {
         BufferedOutputStream bos = null;
         try {
@@ -19,47 +18,54 @@ public class IOUtils {
         }
     }
 
-    public static void writeByteArrayToFileRow(byte[] data, File dest, int row) {
-        BufferedReader in = null;
-        try {
-            in = new BufferedReader(new FileReader(dest));
-            PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(dest)));
-            String line;
-            int count = 1;
-            while ((line = in.readLine()) != null) {
-                if (count == row) {
-                    out.println(data);
-                } else {
-                    out.println(line);
-                }
-                count++;
-            }
-            in.close();
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static void writeByteArrayToFileRow(byte[] data, File dest, long row) {
+        byte[] oldData = readByteArrayFromFile(dest, dest.length());
+        String[] lines = new String(oldData).split("\n");
+        lines[(int) row] = new String(data);
+        Optional<String> s = Arrays.stream(lines).reduce((s1, s2) -> s1 + "\n" + s2);
+        writeByteArrayToFile(s.get().getBytes(), dest);
+    }
 
+    public static void insertByteArrayToFileRow(byte[] data, File dest, long row) {
+        byte[] oldData = readByteArrayFromFile(dest, dest.length());
+        String[] lines = new String(oldData).split("\n");
+        String[] newLines = new String[lines.length + 1];
+        for (int i = 0; i < newLines.length; i++) {
+            if (i < row) {
+                newLines[i] = lines[i];
+            } else if (i == row) {
+                newLines[i] = new String(data);
+            } else {
+                newLines[i] = lines[i-1];
+            }
+        }
+        Optional<String> s = Arrays.stream(newLines).reduce((s1, s2) -> s1 + "\n" + s2);
+        writeByteArrayToFile(s.get().getBytes(), dest);
+    }
+
+    public static byte[] readByteArrayFromFileRow(File src, int row) {
+        byte[] fullData = readByteArrayFromFile(src, src.length());
+        String[] lines = new String(fullData).split("\n");
+        return lines[row].getBytes();
     }
 
     public static void writeBytesToEndOfFile(byte[] newData, File file) {
         byte[] oldData = Utils.IOUtils.readByteArrayFromFile(file, file.length());
         byte[] outData = null;
-        if (oldData != null) outData = (Arrays.toString(oldData) + Arrays.toString(newData)).getBytes();
+        if (oldData != null) outData = ((new String(oldData)) + (new String(newData))).getBytes();
         Utils.IOUtils.writeByteArrayToFile(outData, file);
     }
 
     public static byte[] readByteArrayFromFile(File src, long size) {
         BufferedInputStream bis = null;
         StringBuilder output = new StringBuilder();
+        long count = 0;
         try {
+            int b;
             bis = new BufferedInputStream(new FileInputStream(src));
-            int b = 0;
-            int count = 0;
-            byte[] buff = new byte[BUFFER_SIZE];
-            while ((b = bis.read(buff)) != -1) {
-                output.append(new String(buff));
-                count += BUFFER_SIZE;
+            while ((b = bis.read()) != -1) {
+                output.append((char) b);
+                count++;
                 if (count >= size) break;
             }
             return output.toString().getBytes();
@@ -87,16 +93,16 @@ public class IOUtils {
         }
     }
 
-    public static int getIntInFileName(String str){
+    public static int getIntInFileName(String str) {
         str = str.trim();
-        String str2 = "";
+        StringBuilder str2 = new StringBuilder();
         if (str != null && !"".equals(str)) {
-            for (int i = 0; i < str.length(); i ++) {
+            for (int i = 0; i < str.length(); i++) {
                 if (str.charAt(i) >= 48 && str.charAt(i) <= 57) {
-                    str2 += str.charAt(i);
+                    str2.append(str.charAt(i));
                 }
             }
         }
-        return Integer.getInteger(str2);
+        return Integer.parseInt(str2.toString());
     }
 }

@@ -39,7 +39,7 @@ public class DefaultFileImpl implements File {
 
     @Override
     public void setSize(long newSize) {
-        long oldSize = this.size();
+        long oldSize = fileMeta.getFileSize();
         if (newSize > oldSize) {
             byte[] newData = new byte[(int) (newSize - oldSize)];
 
@@ -59,20 +59,28 @@ public class DefaultFileImpl implements File {
 
     @Override
     public byte[] read(int length) {
+        long fileSize = fileMeta.getFileSize();
+        if(length>fileSize-curr) return null;//TODO: read 超出文件长度报错
         return fileMeta.readFile(length, this.curr);
     }
 
     @Override
     public void write(byte[] b) {
+        long currentBlock = curr/Properties.BLOCK_SIZE;
+        long row = currentBlock + 2;
         for (int i = 0; i < b.length; i = i + Properties.BLOCK_SIZE) {
             byte[] chunk = new byte[Properties.BLOCK_SIZE];
-            System.arraycopy(b, i, chunk, 0, Properties.BLOCK_SIZE);
+            if(i+Properties.BLOCK_SIZE>=b.length) {// 最后一个 Logic Block，文件内容不足一整块
+                System.arraycopy(b,i,chunk,0 ,b.length-i);
+            }else{
+                System.arraycopy(b, i, chunk, 0, Properties.BLOCK_SIZE);
+            }
             BlockManagerController blockManagerController = DefaultBlockManagerControllerImpl.getInstance();
             Block[] blocks = new Block[Properties.DUPLICATED_BLOCK_NUMBER];
             for (int j = 0; j < Properties.DUPLICATED_BLOCK_NUMBER; j++) {
                 blocks[j] = blockManagerController.assignBlock(chunk);
             }
-            fileMeta.addBlock(blocks);
+            fileMeta.addBlock(blocks, row++);
         }
         fileMeta.setFileSize(b.length);
     }
@@ -105,7 +113,8 @@ public class DefaultFileImpl implements File {
         Id<File> id = IdImplFactory.getIdWithIndex(File.class, indexId);
 
         byte[] data = Utils.IOUtils.readByteArrayFromFile(file, file.length());
-        String[] lines = data.toString().split("\n");
+        if(data==null) return null;//TODO: 读到空文件报错！
+        String[] lines = new String(data).split("\n");
         long fileSize = Long.parseLong(lines[0]);
 
         FileMeta fileMeta = DefaultFileMetaImpl.recoverFileMeta(lines, id, fileSize, fileManager);

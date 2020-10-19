@@ -20,6 +20,8 @@ public class DefaultFileMetaImpl implements FileMeta {
 
     @Override
     public long getFileSize() {
+        java.io.File file = new java.io.File(Properties.FILE_PATH + "/" + this.fileManager.getId().toString() + "/" + this.id.toString() + ".file");
+        long fileSize = Integer.parseInt(new String(IOUtils.readByteArrayFromFileRow(file, 0)));
         return fileSize;
     }
 
@@ -43,7 +45,7 @@ public class DefaultFileMetaImpl implements FileMeta {
         if (!file.exists()) {
             try {
                 file.createNewFile();
-                String data = "0\n";
+                String data = "0\n"+Properties.BLOCK_SIZE+"\n";
                 Utils.IOUtils.writeByteArrayToFile(data.getBytes(), file);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -52,9 +54,10 @@ public class DefaultFileMetaImpl implements FileMeta {
     }
 
     @Override
-    public FileMeta addBlock(Block[] blocks) {
+    public FileMeta addBlock(Block[] blocks, long row) {
         List<Block> duplicatedList = new ArrayList<>();
-        java.io.File file = new java.io.File(Properties.FILE_PATH + this.id.toString() + ".file");
+        java.io.File file = new java.io.File(Properties.FILE_PATH + "/" + this.fileManager.getId().toString() + "/" + this.id.toString() + ".file");
+        String logicBlock = "";
         for (Block block : blocks) {
             BlockManager manager = block.getBlockManager();
             duplicatedList.add(block);
@@ -62,16 +65,21 @@ public class DefaultFileMetaImpl implements FileMeta {
             String bmId = manager.getId().toString();
             String bId = block.getIndexId().toString();
 
-            Utils.IOUtils.writeBytesToEndOfFile((bmId + "-" + bId + ";").getBytes(), file);
+            //Utils.IOUtils.writeBytesToEndOfFile((bmId + "-" + bId + ";").getBytes(), file);
+            //改为向 Logic Block List 中任意行（指针）插入一行 Logic Block 数据
+            logicBlock += bmId + "-" + bId + ";";
         }
-        Utils.IOUtils.writeBytesToEndOfFile("\n".getBytes(), file);
+        Utils.IOUtils.insertByteArrayToFileRow(logicBlock.getBytes(), file, row);
         this.blocksList.add(duplicatedList);
         return this;
     }
 
     @Override
     public void setFileSize(long fileSize) {
-        this.fileSize = fileSize;
+        long oldFileSize = getFileSize();
+        this.fileSize = oldFileSize + fileSize;
+        java.io.File file = new java.io.File(Properties.FILE_PATH + "/" + this.fileManager.getId().toString() + "/" + this.id.toString() + ".file");
+        IOUtils.writeByteArrayToFileRow(String.valueOf(this.fileSize).getBytes(), file, 0);
     }
 
     public byte[] readFile(int length, long curr) {
@@ -82,7 +90,7 @@ public class DefaultFileMetaImpl implements FileMeta {
         StringBuilder data = new StringBuilder();
         for (int i = (int) startBlockIndex; i < blocksList.size(); i++) {
             byte[] fileData = blocksList.get(i).get(new Random().nextInt(blocksList.get(i).size())).read();
-            if (fileData != null) data.append(Arrays.toString(fileData));
+            if (fileData != null) data.append(new String(fileData));
             readLength = data.length();
             if (readLength >= length) break;
         }

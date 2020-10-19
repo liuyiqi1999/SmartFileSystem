@@ -25,18 +25,23 @@ public class DefaultBlockManagerImpl implements BlockManager{
     }
 
     @Override
-    public Block newBlock(byte[] b) {
-        File root = new File(Properties.BLOCK_PATH+"/"+this.id.toString());
-        if(!root.exists()){
-            root.mkdir();
-        }
-        Block block = new DefaultBlockImpl(this, b);
+    public void registerBlock(Block block) {
         Id<Block> bid = block.getIndexId();
         if(idBlockMap.get(bid)==null){
             idBlockMap.put(bid,block);
         } else {
             idBlockMap.replace(bid,block);
         }
+    }
+
+    @Override
+    public Block newBlock(byte[] b) {
+        File root = new File(Properties.BLOCK_PATH+"/"+this.id.toString());
+        if(!root.exists()){
+            root.mkdir();
+        }
+        Block block = new DefaultBlockImpl(this, b);
+        registerBlock(block);
         return block;
     }
 
