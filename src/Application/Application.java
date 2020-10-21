@@ -17,9 +17,20 @@ public class Application {
         //File file = fileManager.getFile(IdImplFactory.getIdWithIndex(File.class, 17));
         //file.write("file123".getBytes());
         //file.setSize(15);
-        System.out.println(new String(file.read(7)));
-        file.move(2,1);
-        System.out.println(new String(file.read(5)));
+        System.out.println(new String(file.read(50)));
+        //file.move(2,1);
+        //file.write("test".getBytes());
+        //file.move(0,1);
+        //System.out.println(new String(file.read(50)));
+        //System.out.println(new String(file.read(30)));
+        //file.write("123".getBytes());
+        //System.out.println(new String(file.read(21)));
+        //file.move(1,1);
+        //System.out.println(new String(file.read(5)));
+        //file.write("**".getBytes());
+        //file.move(0,1);
+        //System.out.println(new String(file.read(18)));
+        //System.out.println(new String(file.read(16)));
         //file.move(4,1);
     }
 }

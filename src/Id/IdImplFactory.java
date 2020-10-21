@@ -73,8 +73,7 @@ class IdImpl<T> implements Id<T> {
         return this.id;
     }
 
-    @Override
-    public String toString() {
+    public String toString(){
         switch (this.clazz.getSimpleName()) {
             case "Block":
                 return "b" + this.id;
@@ -86,7 +85,7 @@ class IdImpl<T> implements Id<T> {
             case "FileManager":
                 return "fm" + this.id;
             default:
-                return "";//TODO
+                return "";
         }
     }
 

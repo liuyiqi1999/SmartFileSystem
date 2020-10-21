@@ -1,11 +1,13 @@
 package Utils;
 
+import Exception.BlockException.MD5Exception;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class MD5 {
-    public static String getByteArrayMD5(byte[] inputArr){
-        try {
+    public static String getByteArrayMD5(byte[] inputArr) throws NoSuchAlgorithmException {
+
             // get MD5 digest
             MessageDigest mDigest = MessageDigest.getInstance("MD5");
             // The input String to Byte Array
@@ -16,11 +18,6 @@ public class MD5 {
             byte[] resultArr = mDigest.digest();
             //
             return byteArrToHex(resultArr);
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private static String byteArrToHex(byte[] byteArr) {
