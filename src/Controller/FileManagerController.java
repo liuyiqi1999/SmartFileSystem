@@ -8,5 +8,5 @@ import Id.Id;
 
 public interface FileManagerController {
     FileManager getFileManager(Id<FileManager> id);
-    File assignFile(int indexId) throws FileManagerFullException, FileMetaConstructException;
+    File assignFile(int indexId) throws FileManagerFullException;
 }

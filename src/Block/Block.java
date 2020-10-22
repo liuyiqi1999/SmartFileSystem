@@ -10,9 +10,9 @@ import java.io.IOException;
 public interface Block {
     Id getIndexId();
     BlockManager getBlockManager();
-    byte[] read() throws IOException;
+    byte[] read() throws IOException, MD5Exception;
     int blockSize();
-    boolean check(byte[] data) throws BlockCheckSumException, MD5Exception;
+    boolean check(byte[] data) throws MD5Exception;
 }
 
 

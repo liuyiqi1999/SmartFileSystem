@@ -28,7 +28,7 @@ public class DefaultFileManagerImpl implements FileManager{
     }
 
     @Override
-    public File newFile(Id<File> fileId) throws FileMetaConstructException{
+    public File newFile(Id<File> fileId){
         java.io.File root = new java.io.File(Properties.FILE_PATH+"/"+this.id.toString());
         if(!root.exists()){
             root.mkdir();

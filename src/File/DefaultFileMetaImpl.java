@@ -3,7 +3,10 @@ package File;
 import Block.*;
 import Controller.BlockManagerController;
 import Controller.DefaultBlockManagerControllerImpl;
+import Exception.BlockException.BlockCheckSumException;
 import Exception.BlockException.BlockNullException;
+import Exception.BlockException.MD5Exception;
+import Exception.BlockException.RecoverBlockFailException;
 import Exception.FileException.FileMetaConstructException;
 import Exception.FileException.IllegalDropBlocksException;
 import Exception.IDException.IDNullInFilenameException;
@@ -36,7 +39,7 @@ public class DefaultFileMetaImpl implements FileMeta {
         this.fileManager = fileManager;
     }
 
-    DefaultFileMetaImpl(FileManager fileManager, Id<File> fileId) throws FileMetaConstructException {
+    DefaultFileMetaImpl(FileManager fileManager, Id<File> fileId) {
         this.id = IdImplFactory.getIdWithIndex(FileMeta.class, fileId.getId());
         this.fileSize = 0;
         this.fileManager = fileManager;
@@ -62,7 +65,7 @@ public class DefaultFileMetaImpl implements FileMeta {
     }
 
     @Override
-    public FileMeta addBlock(Block[] blocks, long row) throws IOException{
+    public FileMeta addBlock(Block[] blocks, long row) throws IOException {
         List<Block> duplicatedList = new ArrayList<>();
         java.io.File file = new java.io.File(getPath());
         String logicBlock = "";
@@ -83,33 +86,43 @@ public class DefaultFileMetaImpl implements FileMeta {
     }
 
     @Override
-    public void setFileSize(long fileSize) throws IOException{
-        long oldFileSize = getFileSize();
-        this.fileSize = oldFileSize + fileSize;
+    public void setFileSize(long fileSize) throws IOException {
+        this.fileSize = fileSize;
         java.io.File file = new java.io.File(getPath());
-        try {
-            IOUtils.writeByteArrayToFileRow(String.valueOf(this.fileSize).getBytes(), file, 0);
-        } catch (IOException e) {
-            System.out.println("set file size failed, path is " + file.getPath());
-        }
+        IOUtils.writeByteArrayToFileRow(String.valueOf(this.fileSize).getBytes(), file, 0);
     }
 
-    public byte[] readFile(int length, long curr) throws IOException {
+    public byte[] readFile(int length, long curr) throws IOException, MD5Exception, BlockCheckSumException {
         long startBlockIndex = curr / Properties.BLOCK_SIZE;
+        long cutHead = curr % Properties.BLOCK_SIZE;
         int readLength = 0;
         StringBuilder data = new StringBuilder();
         for (int i = (int) startBlockIndex; i < blocksList.size(); i++) {
-            Block readBlock = blocksList.get(i).get(new Random().nextInt(blocksList.get(i).size()));
+            int random = new Random().nextInt(blocksList.get(i).size());
+            Block readBlock = blocksList.get(i).get(random);
             byte[] fileData = readBlock.read();
+            if (fileData == null) {
+                for (int j = 0; j < Properties.DUPLICATED_BLOCK_NUMBER; j++) {
+                    if (j == random) continue;
+                    readBlock = blocksList.get(i).get(j);
+                    fileData = readBlock.read();
+                    if (fileData != null) break;
+                }
+            }//通过是否为null来判断，而不是Exception
+            if (fileData == null) {//只有在所有 Duplicated Block 都失效时才抛出异常
+                throw new BlockCheckSumException("[BlockCheckSumException] some block in file is corrupted. ");
+            }
+
             int blockSize = readBlock.blockSize();
-            if (fileData != null) data.append(new String(fileData));
+            data.append(new String(fileData));
             readLength += blockSize;
             if (readLength >= length) break;
         }
-        return data.substring(0, length).getBytes();
+
+        return data.substring((int) cutHead, (int) (cutHead + length)).getBytes();
     }
 
-    public static FileMeta recoverFileMeta(String[] lines, Id<File> fileId, long fileSize, FileManager fileManager) throws IOException, BlockNullException, IDNullInFilenameException {
+    public static FileMeta recoverFileMeta(String[] lines, Id<File> fileId, long fileSize, FileManager fileManager) throws IOException, BlockNullException, IDNullInFilenameException, RecoverBlockFailException {
         List<List<Block>> blocksList = new ArrayList<>();
         for (int i = 2; i < lines.length; i++) {
             String[] blockNames = lines[i].split(";");
@@ -134,13 +147,37 @@ public class DefaultFileMetaImpl implements FileMeta {
         return Properties.FILE_PATH + "/" + this.fileManager.getId().toString() + "/" + this.id.toString() + ".file";
     }
 
+    @Override
     public void dropBlocks(int startIndex, int endIndex) throws IllegalDropBlocksException, IOException {
         if (endIndex < startIndex)
             throw new IllegalDropBlocksException("[IllegalDropBlocksException] endIndex is less than startIndex");
-        for (int i = startIndex; i <= endIndex; i++) {
-            blocksList.remove(i);
+        for (int i = startIndex; i < endIndex; i++) {
+            blocksList.remove(startIndex);
         }
         java.io.File file = new java.io.File(getPath());
         IOUtils.deleteByteArrayInFileRow(file, startIndex + 2, endIndex + 2);
+    }
+
+    @Override
+    public byte[] readBlock(int blockIndex) throws IOException, MD5Exception, BlockCheckSumException {
+        int random = new Random().nextInt(blocksList.get(blockIndex).size());
+        Block readBlock = this.blocksList.get(blockIndex).get(random);
+        byte[] fileData = readBlock.read();
+        if (fileData == null) {
+            for (int j = 0; j < Properties.DUPLICATED_BLOCK_NUMBER && j != random; j++) {
+                readBlock = blocksList.get(blockIndex).get(j);
+                fileData = readBlock.read();
+                if (fileData != null) break;
+            }
+        }//通过是否为null来判断，而不是Exception
+        if (fileData == null) {//只有在所有 Duplicated Block 都失效时才抛出异常
+            throw new BlockCheckSumException("[BlockCheckSumException] some block in file is corrupted. ");
+        }
+        return fileData;
+    }
+
+    @Override
+    public int getBlockNum() {
+        return blocksList.size();
     }
 }

@@ -3,10 +3,7 @@ package File;
 import Block.Block;
 import Controller.BlockManagerController;
 import Controller.DefaultBlockManagerControllerImpl;
-import Exception.BlockException.BlockConstructFailException;
-import Exception.BlockException.BlockManagerFullException;
-import Exception.BlockException.BlockNullException;
-import Exception.BlockException.MD5Exception;
+import Exception.BlockException.*;
 import Exception.FileException.*;
 import Exception.IDException.IDNullInFilenameException;
 import Id.*;
@@ -21,7 +18,6 @@ public class DefaultFileImpl implements File {
     FileManager fileManager;
     FileMeta fileMeta;
     long curr;
-    static String path = Properties.FILE_PATH;
     final static int MOVE_CURR = 0;
     final static int MOVE_HEAD = 1;
     final static int MOVE_TAIL = 2;
@@ -33,7 +29,7 @@ public class DefaultFileImpl implements File {
         this.curr = 0;
     }
 
-    public DefaultFileImpl(FileManager fileManager, Id<File> id) throws FileMetaConstructException {
+    public DefaultFileImpl(FileManager fileManager, Id<File> id) {
         this.id = id;
         this.fileManager = fileManager;
         this.fileMeta = new DefaultFileMetaImpl(this.fileManager, this.id);
@@ -46,10 +42,9 @@ public class DefaultFileImpl implements File {
     }
 
     @Override
-    public void setSize(long newSize) throws FileWriteFailException, IllegalCursorException, IOException {
+    public void setSize(long newSize) throws FileWriteFailException, IllegalCursorException, IOException, SetFileSizeFailException, MD5Exception, BlockCheckSumException, IllegalDropBlocksException {
         if (newSize < 0) {
-            System.out.println("[SetSizeException] file size cannot be under zero. ");
-            return;
+            throw new SetFileSizeFailException("[SetFileSizeFailException] new size cannot be under zero. ");
         }
         long oldSize = fileMeta.getFileSize();
         if (newSize > oldSize) {
@@ -57,9 +52,16 @@ public class DefaultFileImpl implements File {
             write(newData);
         } else if (newSize < oldSize) {
             long newBlockIndex = newSize / Properties.BLOCK_SIZE;
-            //TODO：注意写入那个无法被整除的Block，除此之外用 dropBlock 方法。
+            byte[] data = fileMeta.readBlock((int)newBlockIndex);
+            int leftSize = (int) (newSize % Properties.BLOCK_SIZE);
+            byte[] newData = new byte[leftSize];
+            System.arraycopy(data,0,newData,0,leftSize);
+
+            fileMeta.dropBlocks((int)newBlockIndex,fileMeta.getBlockNum()-1);
+            move(newSize,MOVE_HEAD);
+            write(newData);
+            fileMeta.setFileSize(newSize);
         }
-        fileMeta.setFileSize(newSize);
     }
 
     @Override
@@ -73,17 +75,14 @@ public class DefaultFileImpl implements File {
     }
 
     @Override
-    public byte[] read(int length) throws IOException {
+    public byte[] read(int length) throws IOException, OverReadingFileException, IllegalCursorException, BlockCheckSumException, MD5Exception {
         long fileSize = fileMeta.getFileSize();
         if (length > fileSize - curr) {
-            System.out.println("[OverReadingFileException] Reading more bytes than file's length. ");
+            throw new OverReadingFileException("[OverReadingFileException] Reading more bytes than file's length. ");
         }
-        try {
-            move(length, MOVE_CURR);
-        } catch (IllegalCursorException e) {
-            System.out.println(e.getMessage());
-        }
-        return fileMeta.readFile(length, this.curr);
+        byte[] result = fileMeta.readFile(length, this.curr);
+        move(length, MOVE_CURR);
+        return result;
     }
 
     @Override
@@ -110,7 +109,7 @@ public class DefaultFileImpl implements File {
             }
             fileMeta.addBlock(blocks, row++);
         }
-        fileMeta.setFileSize(b.length);
+        fileMeta.setFileSize(fileMeta.getFileSize()+b.length);
         move(b.length, MOVE_CURR);
     }
 
@@ -150,12 +149,12 @@ public class DefaultFileImpl implements File {
         return curr;
     }
 
-    public static File recoverFile(java.io.File file, FileManager fileManager) throws IOException, BlockNullException, IDNullInFilenameException{
+    public static File recoverFile(java.io.File file, FileManager fileManager) throws IOException, BlockNullException, IDNullInFilenameException, RecoverFileFailException, RecoverBlockFailException {
         int indexId = 0;
         try {
             indexId = IOUtils.getIntInFileName(file.getName());
         } catch (IDNullInFilenameException e) {
-            System.out.println(e.getMessage() + "recover file failed, path is " + file.getPath());
+            throw new RecoverFileFailException("[RecoverFileFailException] corrupted file. ");
         }
         Id<File> id = IdImplFactory.getIdWithIndex(File.class, indexId);
         byte[] data = Utils.IOUtils.readByteArrayFromFile(file, file.length());

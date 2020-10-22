@@ -1,8 +1,10 @@
 package Controller;
 
 import Exception.BlockException.BlockNullException;
+import Exception.BlockException.RecoverBlockFailException;
 import Exception.FileException.FileManagerFullException;
 import Exception.FileException.FileMetaConstructException;
+import Exception.FileException.RecoverFileFailException;
 import Exception.IDException.IDNullInFilenameException;
 import File.*;
 import Id.*;
@@ -23,7 +25,7 @@ public class DefaultFileManagerControllerImpl implements FileManagerController {
         this.idFileManagerMap = map;
     }
 
-    public static DefaultFileManagerControllerImpl getInstance() throws IOException, BlockNullException, IDNullInFilenameException {
+    public static DefaultFileManagerControllerImpl getInstance() throws IOException, BlockNullException, IDNullInFilenameException, RecoverFileFailException, RecoverBlockFailException {
         if (defaultFileManagerController == null) {
             Map<Id<FileManager>, FileManager> map = new HashMap<>();
             for (int i = 0; i < Properties.FILE_MANAGER_COUNT; i++) {
@@ -42,7 +44,7 @@ public class DefaultFileManagerControllerImpl implements FileManagerController {
     }
 
     @Override
-    public File assignFile(int indexId) throws FileManagerFullException, FileMetaConstructException {// 分配 File 到 FileManager 方法
+    public File assignFile(int indexId) throws FileManagerFullException {// 分配 File 到 FileManager 方法
         int min = Integer.MAX_VALUE;
         FileManager minFileManager = null;
         // 遍历所有的 FileManager，查找负载最小的 FileManager 管理这个 File
@@ -58,11 +60,11 @@ public class DefaultFileManagerControllerImpl implements FileManagerController {
         if (minFileManager != null) {
             return minFileManager.newFile(id);
         } else {
-            throw new FileManagerFullException("[FileManagerFullException] FileManagers cannot manage more files. ");
+            throw new FileManagerFullException("[FileManagerFullException] FileManagers cannot manage more files with this id. ");
         }
     }
 
-    private void recoverHierarchy() throws IOException, BlockNullException, IDNullInFilenameException {
+    private void recoverHierarchy() throws IOException, BlockNullException, IDNullInFilenameException, RecoverFileFailException, RecoverBlockFailException {
         for (int i = 0; i < Properties.FILE_MANAGER_COUNT; i++) {
             Id<FileManager> fmId = IdImplFactory.getIdWithIndex(FileManager.class, i);
             FileManager fileManager = getFileManager(fmId);

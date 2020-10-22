@@ -1,9 +1,6 @@
 package Block;
 
-import Exception.BlockException.BlockCheckSumException;
-import Exception.BlockException.BlockConstructFailException;
-import Exception.BlockException.BlockNullException;
-import Exception.BlockException.MD5Exception;
+import Exception.BlockException.*;
 import Exception.IDException.IDNullInFilenameException;
 import Id.*;
 import Manager.BlockManager;
@@ -58,18 +55,14 @@ public class DefaultBlockImpl implements Block {
     }
 
     @Override
-    public byte[] read() throws IOException {
+    public byte[] read() throws IOException, MD5Exception {
         byte[] data = blockData.getData();
-        try {
-            if (check(data)) return data;
-        } catch (BlockCheckSumException | MD5Exception e) {
-            System.out.println(e.getMessage());
-        }
+        if (check(data)) return data;
         return null;
     }
 
     @Override
-    public boolean check(byte[] data) throws BlockCheckSumException, MD5Exception {
+    public boolean check(byte[] data) throws MD5Exception {
         String oldMD5 = blockMeta.getCheckSum();
         String newMD5 = null;
         try {
@@ -78,9 +71,7 @@ public class DefaultBlockImpl implements Block {
             throw new MD5Exception("[MD5Exception] getting block md5 failed. ");
         }
         if (newMD5.equals(oldMD5)) return true;
-        else {
-            throw new BlockCheckSumException("[BlockCheckSumException] block check failed, file may be broken.");
-        }
+        else return false;
     }
 
     @Override
@@ -88,12 +79,12 @@ public class DefaultBlockImpl implements Block {
         return blockMeta.getSize();
     }
 
-    public static Block recoverBlock(BlockManager blockManager, File meta, File data) throws IOException, BlockNullException {
+    public static Block recoverBlock(BlockManager blockManager, File meta, File data) throws IOException, BlockNullException, RecoverBlockFailException {
         Id<Block> id = null;
         try {
             id = IdImplFactory.getIdWithIndex(Block.class, IOUtils.getIntInFileName(meta.getName()));
         } catch (IDNullInFilenameException e) {
-            System.out.println(e.getMessage() + " failed to recover file data.");
+            throw new RecoverBlockFailException("[RecoverBlockFailException] failed to recover block data.");
         }
         byte[] metaData = IOUtils.readByteArrayFromFile(meta, meta.length());
         if (metaData == null) {
