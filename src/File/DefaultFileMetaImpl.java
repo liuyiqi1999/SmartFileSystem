@@ -7,7 +7,6 @@ import Exception.BlockException.BlockCheckSumException;
 import Exception.BlockException.BlockNullException;
 import Exception.BlockException.MD5Exception;
 import Exception.BlockException.RecoverBlockFailException;
-import Exception.FileException.FileMetaConstructException;
 import Exception.FileException.IllegalDropBlocksException;
 import Exception.IDException.IDNullInFilenameException;
 import Id.*;

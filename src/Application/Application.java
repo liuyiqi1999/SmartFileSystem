@@ -16,6 +16,7 @@ import File.File;
 import Id.IdImplFactory;
 import Manager.DefaultBlockManagerImpl;
 import Manager.FileManager;
+import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -182,7 +183,7 @@ public class Application {
         try {
             fmId = IOUtils.getIntInFileName(fileFullId.split("-")[0]);
             fId = IOUtils.getIntInFileName(fileFullId.split("-")[1]);
-        } catch (IDNullInFilenameException e) {
+        } catch (IDNullInFilenameException | ArrayIndexOutOfBoundsException e) {
             invalidCommandOutput("invalid file_full_id format. " + e.getMessage() + " ");
             printCommandHelper(command);
             return null;
@@ -483,7 +484,7 @@ public class Application {
         try {
             bmId = IOUtils.getIntInFileName(blockFullId.split("-")[0]);
             bId = IOUtils.getIntInFileName(blockFullId.split("-")[1]);
-        } catch (IDNullInFilenameException e) {
+        } catch (IDNullInFilenameException | ArrayIndexOutOfBoundsException e) {
             invalidCommandOutput("invalid file_full_id format. " + e.getMessage() + " ");
             printCommandHelper("smartHex");
             return;
@@ -521,7 +522,7 @@ public class Application {
         int index;
         try {
             index = Integer.parseInt(indexStr);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
             invalidCommandOutput("invalid index format. " + e.getMessage() + " ");
             printCommandHelper("smartWrite");
             return;

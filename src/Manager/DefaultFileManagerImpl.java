@@ -1,6 +1,5 @@
 package Manager;
 
-import Exception.FileException.FileMetaConstructException;
 import File.*;
 import Id.*;
 import Utils.Properties;

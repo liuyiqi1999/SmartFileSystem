@@ -52,13 +52,13 @@ public class DefaultFileImpl implements File {
             write(newData);
         } else if (newSize < oldSize) {
             long newBlockIndex = newSize / Properties.BLOCK_SIZE;
-            byte[] data = fileMeta.readBlock((int)newBlockIndex);
+            byte[] data = fileMeta.readBlock((int) newBlockIndex);
             int leftSize = (int) (newSize % Properties.BLOCK_SIZE);
             byte[] newData = new byte[leftSize];
-            System.arraycopy(data,0,newData,0,leftSize);
+            System.arraycopy(data, 0, newData, 0, leftSize);
 
-            fileMeta.dropBlocks((int)newBlockIndex,fileMeta.getBlockNum()-1);
-            move(newSize,MOVE_HEAD);
+            fileMeta.dropBlocks((int) newBlockIndex, fileMeta.getBlockNum() - 1);
+            move(newSize, MOVE_HEAD);
             write(newData);
             fileMeta.setFileSize(newSize);
         }
@@ -104,12 +104,12 @@ public class DefaultFileImpl implements File {
                 try {
                     blocks[j] = blockManagerController.assignBlock(chunk);
                 } catch (BlockConstructFailException | MD5Exception | BlockManagerFullException e) {
-                    throw new FileWriteFailException("[FileWriteFailException] write file failed. "+e.getMessage());
+                    throw new FileWriteFailException("[FileWriteFailException] write file failed. " + e.getMessage());
                 }
             }
             fileMeta.addBlock(blocks, row++);
         }
-        fileMeta.setFileSize(fileMeta.getFileSize()+b.length);
+        fileMeta.setFileSize(fileMeta.getFileSize() + b.length);
         move(b.length, MOVE_CURR);
     }
 
@@ -145,7 +145,7 @@ public class DefaultFileImpl implements File {
     }
 
     @Override
-    public long pos(){
+    public long pos() {
         return curr;
     }
 

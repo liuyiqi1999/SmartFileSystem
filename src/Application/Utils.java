@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class Utils {
     public static void smartCat(File file) throws IOException, IllegalCursorException, MD5Exception, OverReadingFileException, BlockCheckSumException {
-        file.move(0,File.MOVE_HEAD);
+        //file.move(0,File.MOVE_HEAD);
         byte[] data = file.read((int) file.size());
         System.out.println(new String(data));
     }
